@@ -122,9 +122,9 @@
 
 | GitHub 아이디 | 맡은 일 | 주요 파일 |
 | --- | --- | --- |
-| rlatjsdbf|기획,readme | |
-|pienna1207| 기획,개발 ||
-|surflife777777-bot|기획,발표||
+| rlatjsdbf|기획,README | (https://m-run.netlify.app/) |
+|pienna1207| 기획,개발 | https://m-run.netlify.app/ |
+|surflife777777-bot|기획,발표| https://m-run.netlify.app/ |
 
 ## 8. 한계와 다음 계획
 
@@ -134,7 +134,7 @@
 -->
 
 **한계:**
-- 수동새로고침,먹고 싶은 음식신청 할때 복수로 신청이 불가능하도록 하는것
+- 바코드를 통해 물건들의 재고를 확인하다보면 순환이 느려질 수 있다
 
 **다음 계획:**
 1.이 사이트를 중산뿐만 아니라 타학교에서도 사용이 가능하도록 만들고 싶다.
