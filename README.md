@@ -122,7 +122,7 @@
 
 | GitHub 아이디 | 맡은 일 | 주요 파일 |
 | --- | --- | --- |
-| rlatjsdbf|기획,README | (https://m-run.netlify.app/) |
+| rlatjsdbf|기획,README | https://m-run.netlify.app/ |
 |pienna1207| 기획,개발 | https://m-run.netlify.app/ |
 |surflife777777-bot|기획,발표| https://m-run.netlify.app/ |
 
