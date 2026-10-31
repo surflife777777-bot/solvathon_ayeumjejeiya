@@ -82,6 +82,7 @@
 - 2절 핵심 시나리오 순서대로 놓습니다.
 - 영상은 내지 않습니다. 시연은 발표 때 합니다.
 --><img width="595" height="693" alt="스크린샷 2026-10-31 143802" src="https://github.com/user-attachments/assets/9362c345-a004-429d-831f-1b3df9f4e26e" /><img width="575" height="592" alt="스크린샷 2026-10-31 143808" src="https://github.com/user-attachments/assets/37403cd4-9148-4a80-97c1-d207f475239c" />
+<img width="820" height="1180" alt="IMG_0025" src="https://github.com/user-attachments/assets/ee151706-9d85-43e4-ab45-635a57347a89" />
 
 
 
