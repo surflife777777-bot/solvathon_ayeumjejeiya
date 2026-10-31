@@ -1,0 +1,904 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>우리 학교 매점</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Do+Hyeon&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+  color-scheme:light;
+  --bg:#EEF1F5; --surface:#FFFFFF; --ink:#1B2532; --muted:#5F6B7C; --line:#D9DFE7;
+  --sign:#1D3A6E; --sign-ink:#E9EEF7; --tag:#FFD43B; --tag-ink:#2E2400;
+  --ok:#1C7F52; --low:#B86A00; --out:#C93636; --field:#F7F9FB;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --bg:#11151B; --surface:#192029; --ink:#E7EBF1; --muted:#9BA6B6; --line:#2A333F;
+    --sign:#182F59; --sign-ink:#D9E2F2; --tag:#F5C842; --tag-ink:#231B00;
+    --ok:#4CC38A; --low:#F0A53A; --out:#FF7070; --field:#121820;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#11151B; --surface:#192029; --ink:#E7EBF1; --muted:#9BA6B6; --line:#2A333F;
+  --sign:#182F59; --sign-ink:#D9E2F2; --tag:#F5C842; --tag-ink:#231B00;
+  --ok:#4CC38A; --low:#F0A53A; --out:#FF7070; --field:#121820;
+}
+*,*::before,*::after{box-sizing:border-box}
+html{scroll-padding-top:calc(env(safe-area-inset-top,0px) + 60px)}
+body{
+  margin:0; background:var(--bg); color:var(--ink);
+  font-family:"Noto Sans KR",system-ui,-apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+  font-size:16px; line-height:1.55; -webkit-font-smoothing:antialiased;
+}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+.wrap{max-width:640px;margin:0 auto;padding:0 20px}
+button,input,select{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--tag);outline-offset:2px}
+
+/* 간판 */
+.sign{background:var(--sign);color:var(--sign-ink)}
+.sign .wrap{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;padding-top:30px;padding-bottom:22px}
+.sign h1{
+  margin:0;font-family:"Do Hyeon","Noto Sans KR",sans-serif;font-weight:400;
+  font-size:clamp(60px,17vw,92px);line-height:.88;color:var(--tag);letter-spacing:-.01em;
+}
+.sign-sub{margin:10px 0 0;font-size:14px;opacity:.88}
+.admin-toggle{
+  flex:none;border:1.5px solid rgba(255,255,255,.45);background:transparent;color:var(--sign-ink);
+  border-radius:999px;padding:7px 14px;font-size:14px;font-weight:500;cursor:pointer;
+}
+.admin-toggle[aria-pressed="true"]{background:var(--tag);border-color:var(--tag);color:var(--tag-ink)}
+
+/* 탭 */
+.tabs{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);border-bottom:1px solid var(--line)}
+.tabs .wrap{display:flex}
+.tab{
+  flex:1;text-align:center;padding:14px 8px 11px;text-decoration:none;color:var(--muted);
+  font-weight:700;border-bottom:3px solid transparent;
+}
+.tab[aria-current="page"]{color:var(--ink);border-bottom-color:var(--ink)}
+
+main{padding:20px 0 48px}
+.notice{background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--low);border-radius:10px;padding:12px 14px;margin-bottom:16px;font-size:14.5px}
+.notice[hidden]{display:none}
+
+/* 검색과 분류 */
+.search{
+  width:100%;padding:12px 14px;border:1.5px solid var(--line);border-radius:12px;background:var(--surface);
+}
+.chips{display:flex;gap:8px;overflow-x:auto;padding:12px 0 4px;margin-bottom:12px;scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chip{
+  flex:none;border:1.5px solid var(--line);background:var(--surface);border-radius:999px;
+  padding:6px 14px;font-size:14px;cursor:pointer;color:var(--muted);
+}
+.chip[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:var(--bg)}
+
+/* 목록 */
+.list{list-style:none;margin:0;padding:0;background:var(--surface);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.list:empty{display:none}
+.item{display:grid;grid-template-columns:1fr auto;gap:8px 14px;padding:14px 16px;border-top:1px solid var(--line);align-items:center}
+.item:first-child{border-top:0}
+.item-name{font-weight:700;font-size:17px;line-height:1.35;word-break:keep-all}
+.item-meta{display:flex;flex-wrap:wrap;align-items:center;gap:4px 12px;font-size:13.5px;color:var(--muted);margin-top:3px}
+.stock{display:inline-flex;align-items:center;gap:6px;font-weight:500}
+.stock .dot{width:8px;height:8px;border-radius:50%;background:currentColor}
+.stock.ok{color:var(--ok)} .stock.low{color:var(--low)} .stock.out{color:var(--out)}
+.item.is-out .item-name,.item.is-out .price{opacity:.45}
+.reports{color:var(--out);font-weight:500}
+.price{
+  position:relative;font-family:"Do Hyeon","Noto Sans KR",sans-serif;font-size:20px;line-height:1;
+  background:var(--tag);color:var(--tag-ink);padding:8px 12px 7px 22px;white-space:nowrap;
+  clip-path:polygon(11px 0,100% 0,100% 100%,11px 100%,0 50%);
+}
+.price::before{content:"";position:absolute;left:9px;top:50%;width:5px;height:5px;margin-top:-2.5px;border-radius:50%;background:var(--surface)}
+.link-btn{border:0;background:none;padding:0;color:var(--muted);text-decoration:underline;text-underline-offset:3px;cursor:pointer;font-size:13.5px}
+.link-btn:disabled{text-decoration:none;cursor:default}
+
+.admin-row{grid-column:1/-1;display:flex;align-items:center;gap:8px}
+.step{width:40px;height:40px;border:1.5px solid var(--line);background:var(--field);border-radius:10px;font-size:20px;line-height:1;cursor:pointer}
+.qty{width:64px;height:40px;text-align:center;border:1.5px solid var(--line);border-radius:10px;background:var(--field);font-weight:700}
+.spacer{flex:1}
+.del{border:0;background:none;color:var(--muted);cursor:pointer;font-size:14px;padding:8px}
+.del.confirm{color:var(--out);font-weight:700}
+
+.empty{color:var(--muted);text-align:center;padding:36px 12px;font-size:15px}
+
+/* 관리자 폼 */
+.panel{background:var(--surface);border:1px dashed var(--muted);border-radius:14px;padding:16px;margin-bottom:16px}
+.panel h2{margin:0 0 12px;font-size:16px}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.form-grid .full{grid-column:1/-1}
+label.f{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--muted)}
+.f input,.f select,.wish-form input{
+  padding:10px 12px;border:1.5px solid var(--line);border-radius:10px;background:var(--field);color:var(--ink);font-size:16px;width:100%;
+}
+.btn{border:0;border-radius:10px;padding:11px 18px;font-weight:700;cursor:pointer;background:var(--ink);color:var(--bg)}
+.btn:disabled{opacity:.45;cursor:default}
+
+/* 간식 요청 */
+.wish-form{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:20px}
+.wish-form h2{margin:0 0 4px;font-size:19px}
+.wish-form p{margin:0 0 14px;color:var(--muted);font-size:14px}
+.wish-fields{display:grid;gap:10px}
+.wish-actions{display:flex;align-items:center;gap:12px;margin-top:12px;flex-wrap:wrap}
+.hint{font-size:13.5px;color:var(--muted);min-height:1.2em;flex:1}
+.hint.warn{color:var(--low)}
+.wish{display:grid;grid-template-columns:2em 1fr auto;gap:4px 12px;padding:14px 16px;border-top:1px solid var(--line);align-items:start}
+.wish:first-child{border-top:0}
+.wish.is-hidden{opacity:.5}
+.rank{font-family:"Do Hyeon","Noto Sans KR",sans-serif;font-size:24px;line-height:1.15;color:var(--muted)}
+.wish-name{font-weight:700;font-size:17px;line-height:1.35;word-break:keep-all}
+.badge{display:inline-block;font-size:12.5px;font-weight:700;border-radius:6px;padding:2px 8px;margin-left:6px;vertical-align:2px}
+.badge.review{background:var(--field);color:var(--muted);border:1px solid var(--line)}
+.badge.planned{background:var(--tag);color:var(--tag-ink)}
+.badge.arrived{background:var(--ok);color:var(--surface)}
+.notes{margin:6px 0 0;padding:0;list-style:none;font-size:14px;color:var(--muted)}
+.notes li{border-left:2px solid var(--line);padding-left:8px;margin-top:4px;word-break:break-word}
+.votes{display:flex;flex-direction:column;gap:6px}
+.vote{
+  display:flex;align-items:center;justify-content:space-between;gap:10px;min-width:118px;padding:6px 10px;
+  border:1.5px solid var(--line);border-radius:10px;background:transparent;cursor:pointer;
+}
+.vote .n{font-family:"Do Hyeon","Noto Sans KR",sans-serif;font-size:21px;line-height:1}
+.vote .l{font-size:13px;color:var(--muted)}
+.vote.up[aria-pressed="true"]{background:var(--tag);border-color:var(--tag);color:var(--tag-ink)}
+.vote.down[aria-pressed="true"]{background:var(--out);border-color:var(--out);color:var(--surface)}
+.vote[aria-pressed="true"] .l{color:inherit}
+.vote:disabled{cursor:default}
+.who{font-size:13px;color:var(--muted);margin-top:6px}
+.footnote{margin:14px 0 0;padding-top:12px;border-top:1px solid var(--line);font-size:13px;color:var(--muted)}
+.bc{flex:1;min-width:0;height:40px;padding:0 10px;border:1.5px solid var(--line);border-radius:10px;background:var(--field);font-size:14px}
+.admin-row{flex-wrap:wrap}
+
+/* 계산 */
+.scan-box{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:20px}
+.scan-box h2{margin:0 0 4px;font-size:19px}
+.scan-box > p{margin:0 0 14px;color:var(--muted);font-size:14px}
+.scan-row{display:flex;gap:8px}
+.scan-row input{flex:1;min-width:0;padding:12px 14px;border:2px solid var(--ink);border-radius:12px;background:var(--field);font-size:20px;letter-spacing:.04em}
+.btn-ghost{margin-top:10px;border:1.5px solid var(--line);background:transparent;border-radius:10px;padding:9px 14px;font-weight:500;cursor:pointer}
+.cam{margin-top:12px}
+.cam video{width:100%;max-height:260px;object-fit:cover;border-radius:12px;background:#000;display:block}
+.scan-result{margin-top:14px;border-radius:12px;padding:14px 16px;display:none}
+.scan-result.show{display:block}
+.scan-result.ok{background:var(--field);border-left:5px solid var(--ok)}
+.scan-result.warn{background:var(--field);border-left:5px solid var(--low)}
+.scan-result.err{background:var(--field);border-left:5px solid var(--out)}
+.scan-result .big{font-size:22px;font-weight:700;line-height:1.3}
+.scan-result .small{font-size:14px;color:var(--muted);margin-top:2px}
+.scan-result .link-btn{margin-top:8px;font-size:14px}
+.sub{font-size:15px;margin:0 0 10px;color:var(--muted);font-weight:500}
+.log{display:flex;align-items:center;gap:12px;padding:12px 16px;border-top:1px solid var(--line)}
+.log:first-child{border-top:0}
+.log .nm{flex:1;font-weight:700}
+.log .tm{font-size:13px;color:var(--muted)}
+.log.undone .nm{text-decoration:line-through;color:var(--muted)}
+.wish-admin{grid-column:2/-1;display:flex;gap:8px;align-items:center;margin-top:6px;flex-wrap:wrap}
+.wish-admin select{padding:6px 8px;border:1.5px solid var(--line);border-radius:8px;background:var(--field);font-size:14px}
+
+.toast{
+  position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translate(-50%,16px);
+  background:var(--ink);color:var(--bg);padding:10px 18px;border-radius:999px;font-size:14.5px;
+  opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;max-width:calc(100% - 40px);text-align:center;z-index:20;
+}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+@media (prefers-reduced-motion: reduce){.toast{transition:none}}
+[hidden]{display:none !important}
+@media (max-width:420px){
+  .form-grid{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+<header class="sign">
+  <div class="wrap">
+    <div>
+      <h1>매점</h1>
+      <p class="sign-sub" id="updated">재고를 불러오는 중이에요</p>
+    </div>
+    <button class="admin-toggle" id="adminToggle" type="button" aria-pressed="false" hidden>재고 관리</button>
+  </div>
+</header>
+
+<nav class="tabs" aria-label="화면 선택">
+  <div class="wrap">
+    <a class="tab" href="#stock" id="tab-stock">지금 재고</a>
+    <a class="tab" href="#wish" id="tab-wish">먹고 싶은 간식</a>
+    <a class="tab" href="#checkout" id="tab-checkout" hidden>계산</a>
+  </div>
+</nav>
+
+<main class="wrap">
+  <div class="notice" id="notice" role="status" hidden></div>
+
+  <section id="view-stock" aria-labelledby="tab-stock">
+    <div class="panel" id="addPanel" hidden>
+      <h2>상품 추가</h2>
+      <div class="form-grid">
+        <label class="f full">상품 이름<input id="addName" maxlength="30" autocomplete="off" placeholder="예: 허니버터칩"></label>
+        <label class="f">분류<select id="addCat"></select></label>
+        <label class="f">가격(원)<input id="addPrice" type="number" inputmode="numeric" min="0" step="100" placeholder="1500"></label>
+        <label class="f">재고(개)<input id="addStock" type="number" inputmode="numeric" min="0" placeholder="20"></label>
+        <label class="f">바코드<input id="addBarcode" inputmode="numeric" autocomplete="off" placeholder="스캐너로 찍거나 입력"></label>
+        <div class="f full"><button class="btn" id="addBtn" type="button">상품 추가</button></div>
+      </div>
+    </div>
+    <input class="search" id="search" type="search" placeholder="간식 이름으로 찾기" autocomplete="off" aria-label="간식 이름으로 찾기">
+    <div class="chips" id="chips" role="group" aria-label="분류"></div>
+    <ul class="list" id="stockList"></ul>
+    <p class="empty" id="stockEmpty" hidden></p>
+  </section>
+
+  <section id="view-wish" aria-labelledby="tab-wish" hidden>
+    <div class="wish-form">
+      <h2>어떤 간식이 들어오면 좋겠어요?</h2>
+      <p>요청이 많은 간식부터 매점에 전달돼요. 이미 있는 요청은 투표로 더해져요.</p>
+      <div class="wish-fields">
+        <input id="wishName" maxlength="30" autocomplete="off" placeholder="간식 이름" aria-label="간식 이름">
+        <input id="wishNote" maxlength="60" autocomplete="off" placeholder="한마디 (선택, 예: 시험기간에 꼭 필요해요)" aria-label="한마디">
+      </div>
+      <div class="wish-actions">
+        <span class="hint" id="wishHint"></span>
+        <button class="btn" id="wishBtn" type="button">요청하기</button>
+      </div>
+      <p class="footnote">요청한 사람의 이름은 다른 학생에게 보이지 않아요. 매점 관리자는 누가 요청했는지 확인할 수 있어요. 투표는 간식마다 한 사람당 한 표예요.</p>
+    </div>
+    <ul class="list" id="wishList"></ul>
+    <p class="empty" id="wishEmpty" hidden></p>
+  </section>
+
+  <section id="view-checkout" aria-labelledby="tab-checkout" hidden>
+    <div class="scan-box">
+      <h2>계산할 때 바코드를 찍어 주세요</h2>
+      <p>한 번 찍을 때마다 재고가 하나씩 줄어요. 바코드 스캐너를 연결하거나 번호를 직접 입력해도 돼요.</p>
+      <div class="scan-row">
+        <input id="scanInput" inputmode="numeric" autocomplete="off" placeholder="바코드 번호" aria-label="바코드 번호">
+        <button class="btn" id="scanBtn" type="button">하나 빼기</button>
+      </div>
+      <button class="btn-ghost" id="camBtn" type="button">카메라로 찍기</button>
+      <div class="cam" id="cam" hidden>
+        <video id="camVideo" playsinline muted></video>
+        <button class="btn-ghost" id="camStop" type="button">카메라 끄기</button>
+      </div>
+      <div class="scan-result" id="scanResult" aria-live="polite"></div>
+    </div>
+    <h3 class="sub">방금 계산한 상품</h3>
+    <ul class="list" id="scanLog"></ul>
+    <p class="empty" id="scanEmpty">아직 계산한 상품이 없어요.</p>
+  </section>
+</main>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(function(){
+  const CATS = ["과자","음료","빵","아이스크림","기타"];
+  const STATUS = {review:"검토 중", planned:"입고 예정", arrived:"들어왔어요"};
+  const REPORT_WINDOW = 2*60*60*1000;
+
+  const state = {
+    db:null, user:null, uid:null, isAdmin:false, canWriteOwn:true,
+    items:new Map(), people:[], meta:{status:{},hidden:{}},
+    mine:{suggestions:{},up:[],down:[],reports:{}},
+    loaded:{items:false,people:false},
+    adminMode:false, query:"", cat:"전체", pending:new Map(),
+  };
+
+  const $ = (s)=>document.querySelector(s);
+  function h(tag, props, ...kids){
+    const el = document.createElement(tag);
+    for (const [k,v] of Object.entries(props||{})){
+      if (v==null || v===false) continue;
+      if (k==="class") el.className = v;
+      else if (k==="text") el.textContent = v;
+      else if (k.startsWith("on")) el.addEventListener(k.slice(2), v);
+      else el.setAttribute(k, v===true ? "" : v);
+    }
+    for (const c of kids.flat()){
+      if (c==null || c===false) continue;
+      el.append(c instanceof Node ? c : document.createTextNode(String(c)));
+    }
+    return el;
+  }
+  const won = (n)=> Number(n||0).toLocaleString("ko-KR") + "원";
+  const norm = (s)=> String(s).toLowerCase().replace(/[\s\p{P}\p{S}]/gu, "");
+  function timeAgo(ms){
+    const s = Math.max(0, (Date.now()-ms)/1000);
+    if (s < 60) return "방금";
+    if (s < 3600) return Math.floor(s/60) + "분 전";
+    if (s < 86400) return Math.floor(s/3600) + "시간 전";
+    return Math.floor(s/86400) + "일 전";
+  }
+  let toastTimer;
+  function toast(msg){
+    const t = $("#toast"); t.textContent = msg; t.classList.add("show");
+    clearTimeout(toastTimer); toastTimer = setTimeout(()=>t.classList.remove("show"), 2600);
+  }
+  function notice(msg){
+    const n = $("#notice");
+    if (!msg){ n.hidden = true; return; }
+    n.textContent = msg; n.hidden = false;
+  }
+
+  /* ---------- 화면 전환 ---------- */
+  function route(){
+    let v = location.hash === "#wish" ? "wish" : location.hash === "#checkout" ? "checkout" : "stock";
+    if (v === "checkout" && !state.isAdmin) v = "stock";
+    for (const k of ["stock","wish","checkout"]){
+      $("#view-" + k).hidden = v !== k;
+      $("#tab-" + k).removeAttribute("aria-current");
+    }
+    $("#tab-" + v).setAttribute("aria-current", "page");
+    if (v !== "checkout") stopCam();
+    else setTimeout(()=>$("#scanInput").focus(), 0);
+  }
+  window.addEventListener("hashchange", route);
+
+  /* ---------- 재고 ---------- */
+  function stockOf(it){ return state.pending.has(it.id) ? state.pending.get(it.id) : (it.stock|0); }
+  function status(n){
+    if (n <= 0) return {cls:"out", label:"품절"};
+    if (n <= 5) return {cls:"low", label:n + "개 남음"};
+    return {cls:"ok", label:n + "개 있어요"};
+  }
+  function reportCount(it){
+    const since = Math.max(it.updatedAt||0, Date.now()-REPORT_WINDOW);
+    let c = 0;
+    for (const p of peopleView()){
+      const r = (p.reports||{})[it.id];
+      if (typeof r === "number" && r > since) c++;
+    }
+    return c;
+  }
+  function peopleView(){
+    if (!state.uid) return state.people;
+    return state.people.filter(p=>p.id!==state.uid).concat([{id:state.uid, ...state.mine}]);
+  }
+
+  let stockDeferred = false;
+  function renderStock(){
+    const list = $("#stockList");
+    const ae = document.activeElement;
+    if (ae && ae.tagName === "INPUT" && list.contains(ae)){ stockDeferred = true; return; }
+    stockDeferred = false;
+
+    $("#addPanel").hidden = !state.adminMode;
+    const q = norm(state.query);
+    const items = [...state.items.values()]
+      .filter(it => state.cat === "전체" || it.category === state.cat)
+      .filter(it => !q || norm(it.name).includes(q))
+      .sort((a,b)=> (stockOf(b)>0) - (stockOf(a)>0) || a.name.localeCompare(b.name, "ko"));
+
+    list.replaceChildren(...items.map(stockRow));
+    const empty = $("#stockEmpty");
+    if (items.length){ empty.hidden = true; }
+    else {
+      empty.hidden = false;
+      if (!state.loaded.items) empty.textContent = "재고를 불러오는 중이에요.";
+      else if (state.items.size === 0) empty.textContent = state.isAdmin
+        ? "아직 등록된 상품이 없어요. 재고 관리를 켜고 첫 상품을 추가해 보세요."
+        : "아직 등록된 상품이 없어요. 매점에서 상품을 올리면 여기에 보여요.";
+      else empty.textContent = q ? "‘" + state.query + "’와 맞는 상품이 없어요." : "이 분류에는 상품이 없어요.";
+    }
+    renderUpdated();
+  }
+
+  function stockRow(it){
+    const n = stockOf(it), st = status(n), rep = reportCount(it);
+    return h("li", {class:"item" + (n<=0 ? " is-out" : "")},
+      h("div", null,
+        h("div", {class:"item-name", text:it.name}),
+        h("div", {class:"item-meta"},
+          h("span", {text:it.category}),
+          h("span", {class:"stock " + st.cls}, h("span",{class:"dot","aria-hidden":"true"}), st.label),
+          rep && n > 0 ? h("span", {class:"reports", text:"품절 제보 " + rep + "건"}) : null,
+          !state.adminMode ? reportControl(it, n) : null
+        )
+      ),
+      h("div", {class:"price", text:won(it.price)}),
+      state.adminMode ? adminControls(it, n) : null
+    );
+  }
+
+  function reportControl(it, n){
+    if (n <= 0 || !state.uid || !state.canWriteOwn) return null;
+    const mine = state.mine.reports[it.id];
+    if (typeof mine === "number" && mine > (it.updatedAt||0) && mine > Date.now()-REPORT_WINDOW)
+      return h("button", {class:"link-btn", type:"button", disabled:true, text:"제보했어요"});
+    return h("button", {class:"link-btn", type:"button", text:"실제로는 없어요",
+      onclick:()=>{ state.mine.reports[it.id] = Date.now(); pruneReports(); saveMine(); renderStock(); toast("품절 제보를 보냈어요"); }});
+  }
+  function pruneReports(){
+    const cut = Date.now() - 24*60*60*1000;
+    for (const [k,v] of Object.entries(state.mine.reports)) if (!(v > cut) || !state.items.has(k)) delete state.mine.reports[k];
+  }
+
+  function adminControls(it, n){
+    const del = h("button", {class:"del", type:"button", text:"삭제"});
+    let armed = null;
+    del.addEventListener("click", ()=>{
+      if (!armed){
+        del.textContent = "한 번 더 누르면 삭제"; del.classList.add("confirm");
+        armed = setTimeout(()=>{ armed=null; del.textContent="삭제"; del.classList.remove("confirm"); }, 3000);
+        return;
+      }
+      clearTimeout(armed);
+      state.db.doc("items/" + it.id).delete().then(()=>toast("삭제했어요"), ()=>toast("삭제하지 못했어요. 다시 시도해 주세요."));
+    });
+    const qty = h("input", {class:"qty", type:"number", inputmode:"numeric", min:"0", max:"999", value:String(n), "aria-label":it.name + " 재고"});
+    qty.addEventListener("change", ()=>{
+      const v = Math.max(0, Math.min(999, parseInt(qty.value,10) || 0));
+      state.pending.set(it.id, v); commitStock(it.id);
+    });
+    qty.addEventListener("blur", ()=>{ setTimeout(()=>{ if (stockDeferred) renderStock(); }, 0); });
+    const bc = h("input", {class:"bc", inputmode:"numeric", autocomplete:"off", placeholder:"바코드 없음", value:it.barcode||"", "aria-label":it.name + " 바코드"});
+    bc.addEventListener("change", async ()=>{
+      const v = bc.value.replace(/\D/g,"").slice(0,20);
+      bc.value = v;
+      if (v && [...state.items.values()].some(x => x.id !== it.id && x.barcode === v)){ toast("다른 상품에 이미 등록된 바코드예요"); bc.value = it.barcode||""; return; }
+      try { await state.db.doc("items/" + it.id).update({barcode:v}); toast("바코드를 저장했어요"); }
+      catch(e){ toast("바코드를 저장하지 못했어요. 다시 시도해 주세요."); }
+    });
+    bc.addEventListener("blur", ()=>{ setTimeout(()=>{ if (stockDeferred) renderStock(); }, 0); });
+    return h("div", {class:"admin-row"},
+      h("button", {class:"step", type:"button", "aria-label":"하나 빼기", text:"−", onclick:()=>bump(it.id,-1)}),
+      qty,
+      h("button", {class:"step", type:"button", "aria-label":"하나 더하기", text:"+", onclick:()=>bump(it.id,1)}),
+      bc,
+      del
+    );
+  }
+
+  const stockTimers = new Map(), stockChains = new Map();
+  function bump(id, d){
+    const it = state.items.get(id); if (!it) return;
+    const v = Math.max(0, Math.min(999, stockOf(it) + d));
+    state.pending.set(id, v); renderStock();
+    clearTimeout(stockTimers.get(id));
+    stockTimers.set(id, setTimeout(()=>commitStock(id), 700));
+  }
+  function commitStock(id){
+    clearTimeout(stockTimers.get(id));
+    const v = state.pending.get(id);
+    const prev = stockChains.get(id) || Promise.resolve();
+    const next = prev.then(async ()=>{
+      try { await state.db.doc("items/" + id).update({stock:v, updatedAt:Date.now()}); }
+      catch(e){ toast("재고를 저장하지 못했어요. 다시 시도해 주세요."); }
+      if (state.pending.get(id) === v) state.pending.delete(id);
+      renderStock();
+    });
+    stockChains.set(id, next);
+  }
+
+  async function addItem(){
+    const name = $("#addName").value.trim().replace(/\s+/g," ");
+    const price = parseInt($("#addPrice").value,10);
+    const stock = parseInt($("#addStock").value,10);
+    if (!name) return toast("상품 이름을 적어 주세요");
+    if (!(price >= 0)) return toast("가격을 숫자로 적어 주세요");
+    if (!(stock >= 0)) return toast("재고를 숫자로 적어 주세요");
+    if ([...state.items.values()].some(it => norm(it.name) === norm(name))) return toast("이미 있는 상품이에요");
+    const barcode = $("#addBarcode").value.replace(/\D/g,"").slice(0,20);
+    if (barcode && [...state.items.values()].some(it => it.barcode === barcode)) return toast("이미 다른 상품에 등록된 바코드예요");
+    const id = "i" + Date.now().toString(36) + Math.random().toString(36).slice(2,6);
+    $("#addBtn").disabled = true;
+    try {
+      await state.db.doc("items/" + id).set({name, category:$("#addCat").value, price, stock, barcode, updatedAt:Date.now()});
+      $("#addName").value = ""; $("#addPrice").value = ""; $("#addStock").value = ""; $("#addBarcode").value = "";
+      toast("상품을 추가했어요");
+    } catch(e){ toast("상품을 추가하지 못했어요. 다시 시도해 주세요."); }
+    $("#addBtn").disabled = false;
+  }
+
+  function renderUpdated(){
+    let last = 0;
+    for (const it of state.items.values()) last = Math.max(last, it.updatedAt||0);
+    $("#updated").textContent = !state.loaded.items ? "재고를 불러오는 중이에요"
+      : last ? "재고 업데이트 " + timeAgo(last) : "아직 올라온 재고가 없어요";
+  }
+
+  function renderChips(){
+    $("#chips").replaceChildren(...["전체", ...CATS].map(c =>
+      h("button", {class:"chip", type:"button", "aria-pressed":String(state.cat===c), text:c,
+        onclick:()=>{ state.cat=c; renderChips(); renderStock(); }})
+    ));
+  }
+
+  /* ---------- 간식 요청 ---------- */
+  function aggregate(){
+    const map = new Map();
+    const people = peopleView();
+    for (const p of people){
+      for (const [k,s] of Object.entries(p.suggestions||{})){
+        if (!s || typeof s.name !== "string") continue;
+        let e = map.get(k);
+        if (!e){ e = {key:k, name:s.name, at:s.at||0, up:0, down:0, notes:[], by:[]}; map.set(k,e); }
+        e.by.push(p.id);
+        if ((s.at||0) < e.at){ e.name = s.name; e.at = s.at||0; }
+        if (s.note) e.notes.push({note:String(s.note).slice(0,60), at:s.at||0});
+      }
+    }
+    for (const p of people){
+      const up = new Set(p.up||[]), down = new Set(p.down||[]);
+      for (const k of up){ const e = map.get(k); if (e) e.up++; }
+      for (const k of down){ const e = map.get(k); if (e && !up.has(k)) e.down++; }
+    }
+    return map;
+  }
+
+  function renderWish(){
+    const agg = aggregate();
+    const hidden = state.meta.hidden || {}, stat = state.meta.status || {};
+    const rows = [...agg.values()]
+      .filter(e => e.up + e.down > 0 || state.isAdmin)
+      .filter(e => !hidden[e.key] || state.adminMode)
+      .sort((a,b)=> (stat[a.key]==="arrived") - (stat[b.key]==="arrived")
+        || (b.up-b.down) - (a.up-a.down) || b.up - a.up || a.at - b.at);
+    const myUp = new Set(state.mine.up), myDown = new Set(state.mine.down);
+    const canAct = !!state.uid && state.canWriteOwn;
+    if (state.adminMode) ensureNames([...new Set(rows.flatMap(e=>e.by))]);
+
+    $("#wishList").replaceChildren(...rows.map((e,i)=>{
+      const isUp = myUp.has(e.key), isDown = !isUp && myDown.has(e.key);
+      const notes = e.notes.sort((a,b)=>b.at-a.at).slice(0,2);
+      return h("li", {class:"wish" + (hidden[e.key] ? " is-hidden" : "")},
+        h("div", {class:"rank", text:String(i+1)}),
+        h("div", null,
+          h("div", {class:"wish-name"}, e.name,
+            stat[e.key] ? h("span", {class:"badge " + stat[e.key], text:STATUS[stat[e.key]]}) : null),
+          notes.length ? h("ul", {class:"notes"}, notes.map(n=>h("li",{text:n.note}))) : null,
+          state.adminMode ? h("div", {class:"who", text:"요청한 사람: " + e.by.map(nameOf).join(", ")}) : null
+        ),
+        h("div", {class:"votes"},
+          h("button", {class:"vote up", type:"button", "aria-pressed":String(isUp), disabled:!canAct,
+              "aria-label": e.name + " 먹고 싶어요 " + e.up + "표", onclick:()=>vote(e.key, "up")},
+            h("span", {class:"l", text:"먹고 싶어요"}), h("span", {class:"n", text:String(e.up)})),
+          h("button", {class:"vote down", type:"button", "aria-pressed":String(isDown), disabled:!canAct,
+              "aria-label": e.name + " 먹기 싫어요 " + e.down + "표", onclick:()=>vote(e.key, "down")},
+            h("span", {class:"l", text:"먹기 싫어요"}), h("span", {class:"n", text:String(e.down)}))
+        ),
+        state.adminMode ? wishAdmin(e.key) : null
+      );
+    }));
+    const empty = $("#wishEmpty");
+    if (rows.length){ empty.hidden = true; }
+    else {
+      empty.hidden = false;
+      empty.textContent = !state.loaded.people ? "요청을 불러오는 중이에요."
+        : "아직 요청이 없어요. 먹고 싶은 간식을 처음으로 적어 보세요.";
+    }
+    $("#wishBtn").disabled = !canAct;
+    updateHint();
+  }
+
+  function wishAdmin(key){
+    const sel = h("select", {"aria-label":"요청 상태"},
+      h("option", {value:"", text:"상태 없음"}),
+      ...Object.entries(STATUS).map(([v,l])=>h("option",{value:v, text:l}))
+    );
+    sel.value = (state.meta.status||{})[key] || "";
+    sel.addEventListener("change", ()=>{
+      const m = clone(state.meta);
+      if (sel.value) m.status[key] = sel.value; else delete m.status[key];
+      saveMeta(m);
+    });
+    const isHidden = !!(state.meta.hidden||{})[key];
+    return h("div", {class:"wish-admin"}, sel,
+      h("button", {class:"link-btn", type:"button", text: isHidden ? "다시 보이기" : "숨기기",
+        onclick:()=>{ const m = clone(state.meta); if (isHidden) delete m.hidden[key]; else m.hidden[key] = true; saveMeta(m); }})
+    );
+  }
+
+  function updateHint(){
+    const hint = $("#wishHint");
+    hint.classList.remove("warn");
+    if (!state.uid){ hint.textContent = state.loaded.people || !state.db ? "로그인해야 요청하고 투표할 수 있어요." : ""; return; }
+    if (!state.canWriteOwn){ hint.textContent = "이 링크로는 요청과 투표를 할 수 없어요."; return; }
+    const v = $("#wishName").value.trim();
+    if (!v){ hint.textContent = ""; return; }
+    const key = norm(v);
+    const inStock = [...state.items.values()].find(it => norm(it.name) === key);
+    const e = aggregate().get(key);
+    if (inStock && stockOf(inStock) > 0){ hint.textContent = "지금 매점에 있어요 (" + stockOf(inStock) + "개)."; hint.classList.add("warn"); }
+    else if (e && e.up + e.down > 0) hint.textContent = "이미 올라온 간식이에요. 요청하면 ‘먹고 싶어요’ 투표로 더해져요.";
+    else hint.textContent = "";
+  }
+
+  function submitWish(){
+    if (!state.uid || !state.canWriteOwn) return;
+    const name = $("#wishName").value.trim().replace(/\s+/g," ");
+    const note = $("#wishNote").value.trim().replace(/\s+/g," ").slice(0,60);
+    if (!name) return toast("간식 이름을 적어 주세요");
+    const key = norm(name);
+    if (!key) return toast("간식 이름을 글자로 적어 주세요");
+    if ((state.meta.hidden||{})[key]) return toast("받지 않는 요청이에요");
+    const ex = aggregate().get(key);
+    const existed = !!ex && ex.up + ex.down > 0;
+    const s = state.mine.suggestions;
+    if (!s[key]){
+      if (Object.keys(s).length >= 30) return toast("요청은 한 사람당 30개까지 할 수 있어요");
+      s[key] = {name, note, at:Date.now()};
+    } else if (note) { s[key] = {...s[key], note}; }
+    if (!state.mine.up.includes(key)) state.mine.up.push(key);
+    state.mine.down = state.mine.down.filter(k => k !== key);
+    $("#wishName").value = ""; $("#wishNote").value = "";
+    saveMine(); renderWish();
+    toast(existed ? "투표에 더했어요" : "요청했어요");
+  }
+
+  function vote(key, dir){
+    if (!state.uid || !state.canWriteOwn) return;
+    const other = dir === "up" ? "down" : "up";
+    const had = state.mine[dir].includes(key);
+    state.mine[dir] = state.mine[dir].filter(k => k !== key);
+    state.mine[other] = state.mine[other].filter(k => k !== key);
+    if (!had) state.mine[dir].push(key);
+    saveMine(); renderWish();
+  }
+
+  /* 관리자만 보는 요청자 이름 */
+  const nameCache = new Map(); let nameFetching = false;
+  function nameOf(id){
+    if (!nameCache.has(id)) return "확인 중";
+    return nameCache.get(id) || "이름을 확인할 수 없음";
+  }
+  async function ensureNames(ids){
+    if (!state.user || nameFetching) return;
+    const need = ids.filter(id => !nameCache.has(id));
+    if (!need.length) return;
+    nameFetching = true;
+    try {
+      const ps = await state.user.profiles(need);
+      for (const id of need) nameCache.set(id, (ps && ps[id] && ps[id].name) || "");
+    } catch(e){ for (const id of need) nameCache.set(id, ""); }
+    nameFetching = false;
+    renderWish();
+  }
+
+  /* ---------- 계산 (바코드) ---------- */
+  let scanLog = [];
+  function showResult(kind, big, small, action){
+    const r = $("#scanResult");
+    r.className = "scan-result show " + kind;
+    r.replaceChildren(h("div",{class:"big",text:big}), small ? h("div",{class:"small",text:small}) : null,
+      action ? h("button",{class:"link-btn",type:"button",text:action.label,onclick:action.run}) : null);
+  }
+  function processCode(raw){
+    const code = String(raw||"").replace(/\D/g,"");
+    if (!code) return;
+    const it = [...state.items.values()].find(x => x.barcode === code);
+    if (!it){
+      showResult("err", "등록되지 않은 바코드예요", code, {label:"이 바코드로 상품 등록하기", run:()=>{
+        setAdmin(true); location.hash = "#stock"; $("#addBarcode").value = code; $("#addName").focus();
+      }});
+      return;
+    }
+    const n = stockOf(it);
+    if (n <= 0){ showResult("warn", it.name, "재고가 0개로 되어 있어요. 실제 재고를 확인해 재고 관리에서 고쳐 주세요."); return; }
+    state.pending.set(it.id, n - 1); commitStock(it.id);
+    scanLog.unshift({key:Date.now()+Math.random(), id:it.id, name:it.name, price:it.price, at:Date.now(), undone:false});
+    scanLog = scanLog.slice(0, 10);
+    showResult(n - 1 <= 5 ? "warn" : "ok", it.name + "  " + won(it.price), "남은 재고 " + (n - 1) + "개");
+    renderLog();
+  }
+  function renderLog(){
+    $("#scanLog").replaceChildren(...scanLog.map(l => h("li", {class:"log" + (l.undone ? " undone" : "")},
+      h("span", {class:"nm", text:l.name}),
+      h("span", {class:"tm", text:timeAgo(l.at)}),
+      l.undone ? h("span", {class:"tm", text:"취소됨"}) :
+        h("button", {class:"link-btn", type:"button", text:"취소", onclick:()=>{
+          const it = state.items.get(l.id); if (!it) return;
+          state.pending.set(it.id, stockOf(it) + 1); commitStock(it.id);
+          l.undone = true; renderLog(); toast(l.name + " 재고를 다시 하나 더했어요");
+        }})
+    )));
+    $("#scanEmpty").hidden = scanLog.length > 0;
+  }
+  function scanSubmit(){
+    const inp = $("#scanInput");
+    processCode(inp.value); inp.value = ""; inp.focus();
+  }
+
+  let camStream = null, camTimer = null, lastCode = "", lastAt = 0, zxingLoading = null;
+  function loadZxing(){
+    if (window.ZXing) return Promise.resolve();
+    if (zxingLoading) return zxingLoading;
+    zxingLoading = new Promise((res, rej)=>{
+      const sc = document.createElement("script");
+      sc.src = "https://cdn.jsdelivr.net/npm/@zxing/library@0.21.3/umd/index.min.js";
+      sc.onload = ()=> window.ZXing ? res() : rej(new Error("no zxing"));
+      sc.onerror = ()=>{ zxingLoading = null; rej(new Error("load failed")); };
+      document.head.append(sc);
+    });
+    return zxingLoading;
+  }
+  async function startCam(){
+    if (camStream) return;
+    const video = $("#camVideo");
+    try {
+      camStream = await navigator.mediaDevices.getUserMedia({video:{facingMode:"environment"}, audio:false});
+    } catch(e){
+      camStream = null;
+      showResult("err", "카메라를 쓸 수 없어요", "바코드 스캐너를 연결하거나 번호를 직접 입력해 주세요.");
+      return;
+    }
+    video.srcObject = camStream;
+    try { await video.play(); } catch(e){}
+    $("#cam").hidden = false; $("#camBtn").hidden = true;
+
+    let detect = null;
+    try {
+      if ("BarcodeDetector" in window){
+        const bd = new BarcodeDetector({formats:["ean_13","ean_8","upc_a","upc_e","code_128"]});
+        detect = async ()=>{ const r = await bd.detect(video); return r && r[0] ? r[0].rawValue : null; };
+      } else {
+        await loadZxing();
+        const reader = new ZXing.MultiFormatReader();
+        const cv = document.createElement("canvas");
+        const ctx = cv.getContext("2d", {willReadFrequently:true});
+        detect = async ()=>{
+          if (!video.videoWidth) return null;
+          cv.width = video.videoWidth; cv.height = video.videoHeight;
+          ctx.drawImage(video, 0, 0);
+          try {
+            const bmp = new ZXing.BinaryBitmap(new ZXing.HybridBinarizer(new ZXing.HTMLCanvasElementLuminanceSource(cv)));
+            return reader.decode(bmp).getText();
+          } catch(e){ return null; }
+        };
+      }
+    } catch(e){
+      stopCam();
+      showResult("err", "이 기기에서는 카메라로 바코드를 읽을 수 없어요", "바코드 스캐너를 연결하거나 번호를 직접 입력해 주세요.");
+      return;
+    }
+    const tick = async ()=>{
+      if (!camStream) return;
+      let code = null;
+      try { code = await detect(); } catch(e){}
+      if (code){
+        const now = Date.now();
+        if (code !== lastCode || now - lastAt > 2000){ lastCode = code; lastAt = now; processCode(code); }
+      }
+      camTimer = setTimeout(tick, 250);
+    };
+    tick();
+  }
+  function stopCam(){
+    clearTimeout(camTimer); camTimer = null;
+    if (camStream){ for (const t of camStream.getTracks()) t.stop(); camStream = null; }
+    const v = $("#camVideo"); if (v) v.srcObject = null;
+    $("#cam").hidden = true; $("#camBtn").hidden = false;
+  }
+
+  /* ---------- 저장 ---------- */
+  const clone = (o)=>JSON.parse(JSON.stringify(o));
+  let mineWriting = false, mineDirty = false;
+  async function saveMine(){
+    mineDirty = true;
+    if (mineWriting) return;
+    mineWriting = true;
+    while (mineDirty){
+      mineDirty = false;
+      try { await state.db.doc("people/" + state.uid).set(clone(state.mine)); }
+      catch(e){
+        if (e && e.code === "invalid_argument"){ state.canWriteOwn = false; toast("이 링크로는 요청과 투표를 저장할 수 없어요"); }
+        else toast("저장하지 못했어요. 잠시 뒤 다시 시도해 주세요.");
+        break;
+      }
+    }
+    mineWriting = false;
+    renderWish(); renderStock();
+  }
+  let metaChain = Promise.resolve();
+  function saveMeta(m){
+    state.meta = m; renderWish();
+    metaChain = metaChain.then(()=>state.db.doc("meta/requests").set(clone(m)))
+      .catch(()=>toast("상태를 저장하지 못했어요. 다시 시도해 주세요."));
+  }
+
+  /* ---------- 연결 ---------- */
+  async function connect(){
+    const cl = window.claude;
+    if (!cl || typeof cl.use !== "function"){ return offline(); }
+    let db = null, user = null;
+    try { db = await cl.use("db"); } catch(e){}
+    if (!db) return offline();
+    try { user = await cl.use("user"); } catch(e){}
+    state.db = db; state.user = user;
+    if (user){
+      try { state.uid = await user.id(); } catch(e){}
+      try { state.isAdmin = await user.canEdit(); } catch(e){}
+    }
+    if (state.isAdmin){
+      $("#tab-checkout").hidden = false; route();
+      const t = $("#adminToggle"); t.hidden = false;
+      let saved = false; try { saved = localStorage.getItem("maejeom-admin") === "1"; } catch(e){}
+      setAdmin(saved);
+    }
+
+    const loadTimer = setTimeout(()=>{
+      if (!state.loaded.items) notice("재고 정보에 연결하지 못하고 있어요. 네트워크를 확인해 주세요.");
+    }, 10000);
+
+    db.collection("items").onSnapshot(snap=>{
+      const m = new Map();
+      for (const d of snap.docs){
+        const x = d.data() || {};
+        if (typeof x.name !== "string") continue;
+        m.set(d.id, {id:d.id, name:x.name.slice(0,30), category:CATS.includes(x.category)?x.category:"기타",
+          price:Number(x.price)||0, stock:Math.max(0, Number(x.stock)|0), updatedAt:Number(x.updatedAt)||0,
+          barcode: typeof x.barcode === "string" ? x.barcode.replace(/\D/g,"").slice(0,20) : ""});
+      }
+      state.items = m;
+      if (!snap.metadata.fromCache){ state.loaded.items = true; clearTimeout(loadTimer); notice(null); }
+      renderStock(); renderWish();
+    }, ()=>{ state.loaded.items = true; clearTimeout(loadTimer); notice("재고 정보를 불러오지 못했어요. 페이지를 다시 열어 주세요."); renderStock(); });
+
+    db.collection("people").onSnapshot(snap=>{
+      state.people = snap.docs.map(d=>({id:d.id, ...(d.data()||{})}));
+      if (state.uid && !mineWriting && !mineDirty){
+        const me = snap.docs.find(d=>d.id===state.uid);
+        if (me){
+          const x = me.data() || {};
+          state.mine = {
+            suggestions: x.suggestions && typeof x.suggestions==="object" ? clone(x.suggestions) : {},
+            up: (Array.isArray(x.up) ? x.up : Array.isArray(x.votes) ? x.votes : []).filter(v=>typeof v==="string"),
+            down: (Array.isArray(x.down) ? x.down : []).filter(v=>typeof v==="string"),
+            reports: x.reports && typeof x.reports==="object" ? clone(x.reports) : {},
+          };
+        }
+      }
+      if (!snap.metadata.fromCache) state.loaded.people = true;
+      renderWish(); renderStock();
+    }, ()=>{ state.loaded.people = true; renderWish(); });
+
+    db.doc("meta/requests").onSnapshot(snap=>{
+      const x = snap.exists ? (snap.data()||{}) : {};
+      state.meta = {status: clone(x.status||{}), hidden: clone(x.hidden||{})};
+      renderWish();
+    }, ()=>{});
+  }
+  function offline(){
+    state.loaded.items = true; state.loaded.people = true;
+    notice("재고 정보에 연결할 수 없어요. claude.ai에 로그인한 상태로 이 페이지를 열어 주세요.");
+    renderStock(); renderWish();
+    $("#updated").textContent = "연결되지 않았어요";
+  }
+
+  function setAdmin(on){
+    state.adminMode = on;
+    $("#adminToggle").setAttribute("aria-pressed", String(on));
+    $("#adminToggle").textContent = on ? "관리 끄기" : "재고 관리";
+    try { localStorage.setItem("maejeom-admin", on ? "1" : "0"); } catch(e){}
+    renderStock(); renderWish();
+  }
+
+  /* ---------- 시작 ---------- */
+  $("#addCat").replaceChildren(...CATS.map(c=>h("option",{value:c,text:c})));
+  $("#adminToggle").addEventListener("click", ()=>setAdmin(!state.adminMode));
+  $("#addBtn").addEventListener("click", addItem);
+  $("#search").addEventListener("input", e=>{ state.query = e.target.value; renderStock(); });
+  $("#wishName").addEventListener("input", updateHint);
+  $("#wishBtn").addEventListener("click", submitWish);
+  $("#scanBtn").addEventListener("click", scanSubmit);
+  $("#scanInput").addEventListener("keydown", e=>{ if (e.key==="Enter" && !e.isComposing){ e.preventDefault(); scanSubmit(); } });
+  $("#camBtn").addEventListener("click", startCam);
+  $("#camStop").addEventListener("click", stopCam);
+  for (const id of ["#wishName","#wishNote"]) $(id).addEventListener("keydown", e=>{ if (e.key==="Enter" && !e.isComposing) submitWish(); });
+  setInterval(()=>{ renderUpdated(); if (scanLog.length) renderLog(); }, 60000);
+
+  route(); renderChips(); renderStock(); renderWish();
+  connect();
+})();
+</script>
+</body>
+</html>
